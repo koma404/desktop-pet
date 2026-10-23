@@ -1,0 +1,2 @@
+# 给 Windows 记事本看的说明文件，保持 CRLF 换行和原样字节
+res/README.txt -text

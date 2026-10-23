@@ -1,0 +1,60 @@
+name: 构建 Windows 版
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 编译 Win7 x64 版
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 MinGW-w64 交叉编译工具
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+
+      - name: 安装 Rust 1.77.2（最后一个官方支持 Win7 的版本）
+        run: |
+          rustup toolchain install 1.77.2 --profile minimal --target x86_64-pc-windows-gnu
+          rustc --version
+
+      - name: 单元测试
+        run: cargo test --locked
+
+      - name: 编译 exe
+        env:
+          RUSTFLAGS: "-D warnings"
+        run: cargo build --release --locked --target x86_64-pc-windows-gnu
+
+      - name: 检查 Win7 兼容性
+        run: python3 tools/check_win7.py target/x86_64-pc-windows-gnu/release/tuanzi.exe
+
+      - name: 打包
+        run: |
+          mkdir -p dist
+          cp target/x86_64-pc-windows-gnu/release/tuanzi.exe dist/
+          cp res/README.txt dist/
+          (cd dist && zip -9 ../tuanzi-win7-x64.zip tuanzi.exe README.txt)
+          ls -la dist
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: tuanzi-win7-x64
+          path: dist/
+          if-no-files-found: error
+
+      - name: 发布到 Releases（推送 v 开头的标签时）
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: tuanzi-win7-x64.zip

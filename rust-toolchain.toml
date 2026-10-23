@@ -1,0 +1,5 @@
+# Rust 1.77.2 是最后一个官方支持 Windows 7 的版本，请勿随意升级。
+[toolchain]
+channel = "1.77.2"
+profile = "minimal"
+targets = ["x86_64-pc-windows-gnu"]
