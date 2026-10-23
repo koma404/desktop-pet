@@ -14,15 +14,20 @@ jobs:
   build:
     name: 编译 Win7 x64 版
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - name: 安装 MinGW-w64 交叉编译工具
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
+          # 关掉 man-db 的触发器，否则 apt 在 Ubuntu 24.04 runner 上会慢很多
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64
 
       - name: 安装 Rust 1.77.2（最后一个官方支持 Win7 的版本）
+        timeout-minutes: 10
         run: |
           rustup toolchain install 1.77.2 --profile minimal --target x86_64-pc-windows-gnu
           rustc --version
